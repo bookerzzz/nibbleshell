@@ -18,13 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package halfshell
+package nibbleshell
 
 import (
 	"os"
 	"text/template"
-
-	"github.com/rafikk/imagick/imagick"
 )
 
 // Halfshell is the primary struct of the program. It holds onto the

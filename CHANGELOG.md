@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Rebranded to nibbleshell
+- Simplified image processing logic
+- Switched to disintegration/imaging package for simple operations
+
 ## 0.1.1-dev
 
 ### Features:
