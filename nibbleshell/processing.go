@@ -33,4 +33,13 @@ import (
 )
 
 type ImageProcessorOptions struct {
+	Width, Height, X, Y, ScaleX, ScaleY uint32
+}
+
+func (ipo *ImageProcessorOptions) String() string {
+	return fmt.Sprintf("w=%dh=%dx=%xy=%dsx=%dsy=%d", ipo.Width, ipo.Height, ipo.X, ipo.Y, ipo.ScaleX, ipo.ScaleY)
+}
+
+func (ipo *ImageProcessorOptions) ProcessImage(img *Image) error {
+	return nil
 }

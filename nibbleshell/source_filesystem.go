@@ -22,7 +22,7 @@
 package nibbleshell
 
 import (
-	"image"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,42 +36,37 @@ type FileSystemImageSource struct {
 	Config *SourceConfig
 }
 
-func NewFileSystemImageSourceWithConfig(config *SourceConfig) ImageSource {
+func NewFileSystemImageSourceWithConfig(config *SourceConfig) (ImageSource, error) {
 	source := &FileSystemImageSource{
 		Config: config,
 	}
 
 	baseDirectory, err := os.Open(source.Config.Directory)
 	if os.IsNotExist(err) {
-		source.Logger.Infof(source.Config.Directory, " does not exit. Creating.")
-		_ = os.MkdirAll(source.Config.Directory, 0700)
-		baseDirectory, err = os.Open(source.Config.Directory)
+		return source, errors.New("source directory does not exist")
 	}
-
 	if err != nil {
-		source.Logger.Fatal(err)
+		return source, err
 	}
 
 	fileInfo, err := baseDirectory.Stat()
 	if err != nil || !fileInfo.IsDir() {
-		source.Logger.Fatal("Directory ", source.Config.Directory, " not a directory", err)
+		return source, errors.New("source directory is not a directory")
 	}
 
-	return source
+	return source, nil
 }
 
-func (s *FileSystemImageSource) GetImage(request *ImageSourceOptions) (image.Image, error) {
+func (s *FileSystemImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
 	fileName := s.fileNameForRequest(request)
 
 	file, err := os.Open(fileName)
 	if err != nil {
-		s.Logger.Warnf("Failed to open file: %v", err)
 		return nil, err
 	}
 
 	image, err := NewImageFromFile(file)
 	if err != nil {
-		s.Logger.Warnf("Failed to read image: %v", err)
 		return nil, err
 	}
 

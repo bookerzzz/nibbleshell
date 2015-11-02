@@ -23,7 +23,6 @@ package nibbleshell
 
 import (
 	"fmt"
-	"image"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -38,19 +37,17 @@ type HttpImageSource struct {
 	Config *SourceConfig
 }
 
-func NewHttpImageSourceWithConfig(config *SourceConfig) ImageSource {
+func NewHttpImageSourceWithConfig(config *SourceConfig) (ImageSource, error) {
 	return &HttpImageSource{
 		Config: config,
-		Logger: NewLogger("source.http.%s", config.Name),
-	}
+	}, nil
 }
 
-func (s *HttpImageSource) GetImage(request *ImageSourceOptions) (image.Image, error) {
+func (s *HttpImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
 	httpRequest := s.getHttpRequest(request)
 	httpResponse, err := http.DefaultClient.Do(httpRequest)
 	defer httpResponse.Body.Close()
 	if err != nil {
-		s.Logger.Warnf("Error downlading image: %v", err)
 		return nil, err
 	}
 	if httpResponse.StatusCode != 200 {
@@ -58,11 +55,12 @@ func (s *HttpImageSource) GetImage(request *ImageSourceOptions) (image.Image, er
 	}
 	image, err := NewImageFromBuffer(httpResponse.Body)
 	if err != nil {
-		responseBody, _ := ioutil.ReadAll(httpResponse.Body)
-		s.Logger.Warnf("Unable to create image from response body: %v (url=%v)", string(responseBody), httpRequest.URL)
+		// consume all body anyway, ignore errors
+		_, _ = ioutil.ReadAll(httpResponse.Body)
+
+		// return image read error
 		return nil, err
 	}
-	s.Logger.Infof("Successfully retrieved image from http: %v", httpRequest.URL)
 	return image, nil
 }
 

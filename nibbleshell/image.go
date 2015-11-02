@@ -22,49 +22,61 @@
 package nibbleshell
 
 import (
+	"bytes"
+	"errors"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"os"
-	"text/template"
 )
 
-// Nibbleshell is the primary struct of the program. It holds onto the
-// configuration, the HTTP server, and all the routes.
-type Nibbleshell struct {
-	Pid    int
-	Config *Config
-	Routes []*Route
-	Server *Server
+type imageFormat string
+
+const (
+	JPEG imageFormat = "jpeg"
+	PNG  imageFormat = "png"
+)
+
+func (f imageFormat) String() string {
+	return "image/" + string(f)
 }
 
-// NewWithConfig creates a new Halfshell instance from an instance of Config.
-func NewWithConfig(config *Config) (*Nibbleshell, error) {
-	routes := make([]*Route, 0, len(config.RouteConfigs))
-	for _, routeConfig := range config.RouteConfigs {
-		route, err := NewRouteWithConfig(routeConfig, config.StatterConfig)
-		if err != nil {
-			return nil, err
-		}
-		routes = append(routes, route)
-	}
-
-	return &Nibbleshell{
-		Pid:    os.Getpid(),
-		Config: config,
-		Routes: routes,
-		Server: NewServerWithConfigAndRoutes(config.ServerConfig, routes),
-	}, nil
+type Image struct {
+	image  image.Image
+	format imageFormat
+	buffer bytes.Buffer
 }
 
-// Run starts the Halfshell program. Performs global (de)initialization, and
-// starts the HTTP server.
-func (h *Nibbleshell) Run() error {
-	tmpl, err := template.New("start").Parse(StartupTemplateString)
-	if err != nil {
-		return err
-	}
-	err = tmpl.Execute(os.Stdout, h)
-	if err != nil {
-		return err
-	}
-
-	return h.Server.ListenAndServe()
+func (i *Image) MIMEType() string {
+	return i.format.String()
 }
+
+func (i *Image) Size() int {
+	return i.buffer.Len()
+}
+
+func (i *Image) Bytes() []byte {
+	return i.buffer.Bytes()
+}
+
+func NewImageFromFile(f *os.File) (*Image, error) {
+	return nil, errors.New("not yet implemented")
+}
+
+func NewImageFromBuffer(i io.ReadCloser) (*Image, error) {
+	return nil, errors.New("not yet implemented")
+}
+
+/*
+	var b bytes.Buffer
+	var err error
+	switch fmt {
+	case JPEG:
+		err = jpeg.Encode(&b, image, nil)
+	case PNG:
+		err = png.Encode(&b, image, nil)
+	default:
+		panic("attempt to use invalid output format")
+	}
+*/

@@ -23,7 +23,6 @@ package nibbleshell
 
 import (
 	"fmt"
-	"image"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -41,19 +40,17 @@ type S3ImageSource struct {
 	Config *SourceConfig
 }
 
-func NewS3ImageSourceWithConfig(config *SourceConfig) ImageSource {
+func NewS3ImageSourceWithConfig(config *SourceConfig) (ImageSource, error) {
 	return &S3ImageSource{
 		Config: config,
-		Logger: NewLogger("source.s3.%s", config.Name),
-	}
+	}, nil
 }
 
-func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (image.Image, error) {
+func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
 	httpRequest := s.signedHTTPRequestForRequest(request)
 	httpResponse, err := http.DefaultClient.Do(httpRequest)
 	defer httpResponse.Body.Close()
 	if err != nil {
-		s.Logger.Warnf("Error downlading image: %v", err)
 		return nil, err
 	}
 	if httpResponse.StatusCode != 200 {
@@ -61,11 +58,12 @@ func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (image.Image, erro
 	}
 	image, err := NewImageFromBuffer(httpResponse.Body)
 	if err != nil {
-		responseBody, _ := ioutil.ReadAll(httpResponse.Body)
-		s.Logger.Warnf("Unable to create image from response body: %v (url=%v)", string(responseBody), httpRequest.URL)
+		// consume all body anyway, ignore errors
+		_, _ = ioutil.ReadAll(httpResponse.Body)
+
+		// return image read error
 		return nil, err
 	}
-	s.Logger.Infof("Successfully retrieved image from S3: %v", httpRequest.URL)
 	return image, nil
 }
 

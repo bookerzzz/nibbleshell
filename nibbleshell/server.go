@@ -23,10 +23,11 @@ package nibbleshell
 
 import (
 	"fmt"
-	"image"
 	"net"
 	"net/http"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type Server struct {
@@ -41,14 +42,19 @@ func NewServerWithConfigAndRoutes(config *ServerConfig, routes []*Route) *Server
 		WriteTimeout:   time.Duration(config.WriteTimeout) * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	server := &Server{httpServer, routes, NewLogger("server")}
+	server := &Server{httpServer, routes}
 	httpServer.Handler = server
 	return server
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hw := s.NewResponseWriter(w)
-	hr := s.NewRequest(r)
+	hr, err := s.NewRequest(r)
+	if err != nil {
+		log.WithError(err).Warning("Error processing request")
+		hw.WriteError("Bad Request", http.StatusBadRequest)
+		return
+	}
 	defer s.LogRequest(hw, hr)
 	switch {
 	case "/healthcheck" == hr.URL.Path || "/health" == hr.URL.Path:
@@ -59,6 +65,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) ImageRequestHandler(w *ResponseWriter, r *Request) {
+	log := log.WithField("handler", "image")
 	if r.Route == nil {
 		w.WriteError(fmt.Sprintf("No route available to handle request: %v",
 			r.URL.Path), http.StatusNotFound)
@@ -67,25 +74,23 @@ func (s *Server) ImageRequestHandler(w *ResponseWriter, r *Request) {
 
 	defer func() { go r.Route.Statter.RegisterRequest(w, r) }()
 
-	s.Logger.Infof("Handling request for image %s with dimensions %v",
-		r.SourceOptions.Path, r.ProcessorOptions.Dimensions)
+	log.Info(fmt.Sprintf("Handling request for image %s with processor options %q",
+		r.SourceOptions.Path, r.ProcessorOptions))
 
 	image, err := r.Route.Source.GetImage(r.SourceOptions)
 	if err != nil {
 		w.WriteError("Not Found", http.StatusNotFound)
 		return
 	}
-	defer image.Destroy()
 
-	err = r.Route.Processor.ProcessImage(image, r.ProcessorOptions)
+	err = r.ProcessorOptions.ProcessImage(image)
 	if err != nil {
-		s.Logger.Warnf("Error processing image data %s to dimensions: %v", r.ProcessorOptions.Dimensions)
-		w.WriteError("Internal Server Error", http.StatusNotFound)
+		log.WithError(err).Warning("Error processing image data")
+		w.WriteError("Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	s.Logger.Infof("Returning resized image %s to dimensions %v",
-		r.SourceOptions.Path, r.ProcessorOptions.Dimensions)
+	log.Info("Returning resized image")
 
 	cacheControl := r.Route.CacheControl
 	if r.Route.CacheControl == "" {
@@ -113,7 +118,7 @@ type Request struct {
 	ProcessorOptions *ImageProcessorOptions
 }
 
-func (s *Server) NewRequest(r *http.Request) *Request {
+func (s *Server) NewRequest(r *http.Request) (*Request, error) {
 	request := &Request{r, time.Now(), nil, nil, nil}
 	for _, route := range s.Routes {
 		if route.ShouldHandleRequest(r) {
@@ -122,11 +127,15 @@ func (s *Server) NewRequest(r *http.Request) *Request {
 	}
 
 	if request.Route != nil {
-		request.SourceOptions, request.ProcessorOptions =
+		var err error
+		request.SourceOptions, request.ProcessorOptions, err =
 			request.Route.SourceAndProcessorOptionsForRequest(r)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return request
+	return request, nil
 }
 
 // ResponseWriter is a wrapper around http.ResponseWriter that provides
@@ -167,11 +176,9 @@ func (hw *ResponseWriter) WriteError(message string, status int) {
 }
 
 // WriteImage writes an image to the output stream and sets the appropriate headers.
-func (hw *ResponseWriter) WriteImage(image image.Image) {
-	bytes, size := image.GetBytes()
-	hw.SetHeader("Content-Type", image.GetMIMEType())
-	hw.SetHeader("Content-Length", fmt.Sprintf("%d", size))
-	hw.SetHeader("ETag", image.GetSignature())
+func (hw *ResponseWriter) WriteImage(image *Image) {
+	hw.SetHeader("Content-Type", image.MIMEType())
+	hw.SetHeader("Content-Length", fmt.Sprintf("%d", image.Size()))
 	hw.WriteHeader(http.StatusOK)
-	hw.Write(bytes)
+	hw.Write(image.Bytes())
 }

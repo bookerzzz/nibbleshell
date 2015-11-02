@@ -105,14 +105,9 @@ func (c *configParser) parse() *Config {
 	}
 
 	sourceConfigsByName := make(map[string]*SourceConfig)
-	processorConfigsByName := make(map[string]*ProcessorConfig)
 
 	for sourceName := range c.data["sources"].(map[string]interface{}) {
 		sourceConfigsByName[sourceName] = c.parseSourceConfig(sourceName)
-	}
-
-	for processorName := range c.data["processors"].(map[string]interface{}) {
-		processorConfigsByName[processorName] = c.parseProcessorConfig(processorName)
 	}
 
 	routesData := c.data["routes"].(map[string]interface{})
@@ -136,12 +131,10 @@ func (c *configParser) parse() *Config {
 			os.Exit(1)
 		}
 
-		processorKey := routeData["processor"].(string)
 		sourceKey := routeData["source"].(string)
 
 		routeConfig.Name = routeData["name"].(string)
 		routeConfig.Pattern = pattern
-		routeConfig.ProcessorConfig = processorConfigsByName[processorKey]
 		routeConfig.SourceConfig = sourceConfigsByName[sourceKey]
 		if _, ok := routeData["cache_control"]; ok {
 			routeConfig.CacheControl = routeData["cache_control"].(string)

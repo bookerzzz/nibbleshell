@@ -23,19 +23,18 @@ package nibbleshell
 
 import (
 	"fmt"
-	"image"
 	"os"
 )
 
 type ImageSourceType string
-type ImageSourceFactoryFunction func(*SourceConfig) ImageSource
+type ImageSourceFactoryFunction func(*SourceConfig) (ImageSource, error)
 
 var (
 	imageSourceTypeToFactoryFunctionMap = make(map[ImageSourceType]ImageSourceFactoryFunction)
 )
 
 type ImageSource interface {
-	GetImage(*ImageSourceOptions) (image.Image, error)
+	GetImage(*ImageSourceOptions) (*Image, error)
 }
 
 type ImageSourceOptions struct {
@@ -46,7 +45,7 @@ func RegisterSource(sourceType ImageSourceType, factory ImageSourceFactoryFuncti
 	imageSourceTypeToFactoryFunctionMap[sourceType] = factory
 }
 
-func NewImageSourceWithConfig(config *SourceConfig) ImageSource {
+func NewImageSourceWithConfig(config *SourceConfig) (ImageSource, error) {
 	factory := imageSourceTypeToFactoryFunctionMap[config.Type]
 	if factory == nil {
 		fmt.Fprintf(os.Stderr, "Unknown image source type: %s\n", config.Type)

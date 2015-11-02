@@ -42,17 +42,24 @@ type Route struct {
 
 // NewRouteWithConfig returns a pointer to a new Route instance created using
 // the provided configuration settings.
-func NewRouteWithConfig(config *RouteConfig, statterConfig *StatterConfig) *Route {
+func NewRouteWithConfig(config *RouteConfig, statterConfig *StatterConfig) (*Route, error) {
+	source, err := NewImageSourceWithConfig(config.SourceConfig)
+	if err != nil {
+		return nil, err
+	}
+	statter, err := NewStatterWithConfig(config, statterConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Route{
 		Name:           config.Name,
 		Pattern:        config.Pattern,
 		ImagePathIndex: config.ImagePathIndex,
 		CacheControl:   config.CacheControl,
-		Processor:      NewImageProcessorWithConfig(config.ProcessorConfig),
-		Formats:        config.ProcessorConfig.Formats,
-		Source:         NewImageSourceWithConfig(config.SourceConfig),
-		Statter:        NewStatterWithConfig(config, statterConfig),
-	}
+		Source:         source,
+		Statter:        statter,
+	}, nil
 }
 
 // ShouldHandleRequest accepts an HTTP request and returns a bool indicating
@@ -64,31 +71,46 @@ func (p *Route) ShouldHandleRequest(r *http.Request) bool {
 // SourceAndProcessorOptionsForRequest parses the source and processor options
 // from the request.
 func (p *Route) SourceAndProcessorOptionsForRequest(r *http.Request) (
-	*ImageSourceOptions, *ImageProcessorOptions) {
+	*ImageSourceOptions, *ImageProcessorOptions, error) {
 
 	matches := p.Pattern.FindAllStringSubmatch(r.URL.Path, -1)[0]
 	path := matches[p.ImagePathIndex]
 
-	var width, height uint64
-	var blurRadius float64
-	if formatName := r.FormValue("format"); formatName == "" {
-		width, _ = strconv.ParseUint(r.FormValue("w"), 10, 32)
-		height, _ = strconv.ParseUint(r.FormValue("h"), 10, 32)
-		blurRadius, _ = strconv.ParseFloat(r.FormValue("blur"), 64)
-	} else {
-		width = p.Formats[formatName].Width
-		height = p.Formats[formatName].Height
-		blurRadius = p.Formats[formatName].Blur
+	var width, height, x, y, scale_x, scale_y uint64
+	var err error
+	width, err = strconv.ParseUint(r.FormValue("w"), 10, 32)
+	if err != nil {
+		return nil, nil, err
+	}
+	height, err = strconv.ParseUint(r.FormValue("h"), 10, 32)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	focalpoint := r.FormValue("focalpoint")
-	scaleModeName := r.FormValue("scale_mode")
-	scaleMode, _ := ScaleModes[scaleModeName]
+	x, err = strconv.ParseUint(r.FormValue("x"), 10, 32)
+	if err != nil {
+		return nil, nil, err
+	}
+	y, err = strconv.ParseUint(r.FormValue("y"), 10, 32)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	scale_x, err = strconv.ParseUint(r.FormValue("scale_x"), 10, 32)
+	if err != nil {
+		return nil, nil, err
+	}
+	scale_y, err = strconv.ParseUint(r.FormValue("scale_y"), 10, 32)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return &ImageSourceOptions{Path: path}, &ImageProcessorOptions{
-		Dimensions: ImageDimensions{uint(width), uint(height)},
-		BlurRadius: blurRadius,
-		ScaleMode:  uint(scaleMode),
-		Focalpoint: NewFocalpointFromString(focalpoint),
-	}
+		Width:  uint32(width),
+		Height: uint32(height),
+		X:      uint32(x),
+		Y:      uint32(y),
+		ScaleX: uint32(scale_x),
+		ScaleY: uint32(scale_y),
+	}, nil
 }

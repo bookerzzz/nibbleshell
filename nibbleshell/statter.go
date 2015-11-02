@@ -41,33 +41,29 @@ type statsdStatter struct {
 	Enabled  bool
 }
 
-func NewStatterWithConfig(routeConfig *RouteConfig, statterConfig *StatterConfig) Statter {
-	logger := NewLogger("stats.%s", routeConfig.Name)
-	var s statsdStatter
+func NewStatterWithConfig(routeConfig *RouteConfig, statterConfig *StatterConfig) (Statter, error) {
+	s := &statsdStatter{}
 
 	if statterConfig.Enabled {
 		var err error
 		s.Hostname, err = os.Hostname()
 		if err != nil {
-			logger.Errorf("Unable to find hostname: %v", err)
-			return nil
+			return s, err
 		}
 
 		s.addr, err = net.ResolveUDPAddr(
 			"udp", fmt.Sprintf("%s:%d", statterConfig.Host, statterConfig.Port))
 		if err != nil {
-			logger.Errorf("Unable to resolve UDP address: %v", err)
-			return nil
+			return s, err
 		}
 
 		s.conn, err = net.DialUDP("udp", nil, s.addr)
 		if err != nil {
-			logger.Errorf("Unable to create UDP connection: %v", err)
-			return nil
+			return s, err
 		}
 	}
 
-	return &s
+	return s, nil
 }
 
 func (s *statsdStatter) RegisterRequest(w *ResponseWriter, r *Request) {
@@ -84,33 +80,27 @@ func (s *statsdStatter) RegisterRequest(w *ResponseWriter, r *Request) {
 
 	s.count(fmt.Sprintf("http.status.%d", w.Status))
 	s.count(fmt.Sprintf("image_resized.%s", status))
-	s.count(fmt.Sprintf("image_resized_%s.%s", r.ProcessorOptions.Dimensions, status))
+	s.count(fmt.Sprintf("image_resized_%s.%s", r.ProcessorOptions.String(), status))
 
 	if status == "success" {
 		durationInMs := (now.UnixNano() - r.Timestamp.UnixNano()) / 1000000
 		s.time("image_resized", durationInMs)
-		s.time(fmt.Sprintf("image_resized_%s", r.ProcessorOptions.Dimensions), durationInMs)
+		s.time(fmt.Sprintf("image_resized_%s", r.ProcessorOptions.String()), durationInMs)
 	}
 }
 
 func (s *statsdStatter) count(stat string) {
-	stat = fmt.Sprintf("%s.halfshell.%s.%s", s.Hostname, s.Name, stat)
-	s.Logger.Infof("Incrementing counter: %s", stat)
+	stat = fmt.Sprintf("%s.nibbleshell.%s.%s", s.Hostname, s.Name, stat)
 	s.send(stat, "1|c")
 }
 
 func (s *statsdStatter) time(stat string, time int64) {
-	stat = fmt.Sprintf("%s.halfshell.%s.%s", s.Hostname, s.Name, stat)
-	s.Logger.Infof("Registering time: %s (%d)", stat, time)
+	stat = fmt.Sprintf("%s.nibbleshell.%s.%s", s.Hostname, s.Name, stat)
 	s.send(stat, fmt.Sprintf("%d|ms", time))
 }
 
-func (s *statsdStatter) send(stat string, value string) {
+func (s *statsdStatter) send(stat string, value string) error {
 	data := fmt.Sprintf("%s:%s", stat, value)
-	n, err := s.conn.Write([]byte(data))
-	if err != nil {
-		s.Logger.Errorf("Error sending data to statsd: %v", err)
-	} else if n == 0 {
-		s.Logger.Errorf("No bytes were written")
-	}
+	_, err := s.conn.Write([]byte(data))
+	return err
 }

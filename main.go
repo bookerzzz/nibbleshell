@@ -34,7 +34,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	config := halfshell.NewConfigFromFile(os.Args[1])
-	halfshell := halfshell.NewWithConfig(config)
-	halfshell.Run()
+	config := nibbleshell.NewConfigFromFile(os.Args[1])
+	nibbleshell, err := nibbleshell.NewWithConfig(config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v", err)
+		os.Exit(1)
+	}
+	err = nibbleshell.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v", err)
+		os.Exit(1)
+	}
 }
