@@ -1,4 +1,5 @@
 // Copyright (c) 2014 Oyster
+// Copyright (c) 2015 Hotel Booker B.V.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -64,28 +65,6 @@ type SourceConfig struct {
 	S3SecretKey string
 	Directory   string
 	Host        string
-}
-
-// ProcessorConfig holds the configuration settings for the image processor.
-type ProcessorConfig struct {
-	Name                    string
-	ImageCompressionQuality uint64
-	DefaultScaleMode        uint
-	DefaultImageHeight      uint64
-	DefaultImageWidth       uint64
-	MaxImageDimensions      ImageDimensions
-	MaxBlurRadiusPercentage float64
-	AutoOrient              bool
-	Formats                 map[string]FormatConfig
-
-	// DEPRECATED
-	MaintainAspectRatio bool
-}
-
-type FormatConfig struct {
-	Width  uint64
-	Height uint64
-	Blur   float64
 }
 
 // StatterConfig holds configuration data for StatsD

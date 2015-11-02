@@ -1,4 +1,5 @@
 // Copyright (c) 2014 Oyster
+// Copyright (c) 2015 Hotel Booker B.V.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,42 +19,45 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package halfshell
+package nibbleshell
 
 import (
-	"fmt"
-	"log"
 	"os"
+	"text/template"
 )
 
-type Logger struct {
-	*log.Logger
-	Name string
+// Halfshell is the primary struct of the program. It holds onto the
+// configuration, the HTTP server, and all the routes.
+type Halfshell struct {
+	Pid    int
+	Config *Config
+	Routes []*Route
+	Server *Server
 }
 
-func NewLogger(nameFormat string, v ...interface{}) *Logger {
-	return &Logger{
-		log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds),
-		fmt.Sprintf(nameFormat, v...),
+// NewWithConfig creates a new Halfshell instance from an instance of Config.
+func NewWithConfig(config *Config) *Halfshell {
+	routes := make([]*Route, 0, len(config.RouteConfigs))
+	for _, routeConfig := range config.RouteConfigs {
+		routes = append(routes, NewRouteWithConfig(routeConfig, config.StatterConfig))
+	}
+
+	return &Halfshell{
+		Pid:    os.Getpid(),
+		Config: config,
+		Routes: routes,
+		Server: NewServerWithConfigAndRoutes(config.ServerConfig, routes),
 	}
 }
 
-func (l *Logger) Logf(level, format string, v ...interface{}) {
-	l.Printf("[%s] [%s] %s", level, l.Name, fmt.Sprintf(format, v...))
-}
+// Run starts the Halfshell program. Performs global (de)initialization, and
+// starts the HTTP server.
+func (h *Halfshell) Run() {
+	var tmpl, _ = template.New("start").Parse(StartupTemplateString)
+	_ = tmpl.Execute(os.Stdout, h)
 
-func (l *Logger) Debugf(format string, v ...interface{}) {
-	l.Logf("DEBUG", format, v...)
-}
+	imagick.Initialize()
+	defer imagick.Terminate()
 
-func (l *Logger) Infof(format string, v ...interface{}) {
-	l.Logf("INFO", format, v...)
-}
-
-func (l *Logger) Warnf(format string, v ...interface{}) {
-	l.Logf("WARNING", format, v...)
-}
-
-func (l *Logger) Errorf(format string, v ...interface{}) {
-	l.Logf("ERROR", format, v...)
+	h.Server.ListenAndServe()
 }
