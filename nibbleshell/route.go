@@ -35,8 +35,6 @@ type Route struct {
 	Name           string
 	Pattern        *regexp.Regexp
 	ImagePathIndex int
-	Processor      ImageProcessor
-	Formats        map[string]FormatConfig
 	Source         ImageSource
 	CacheControl   string
 	Statter        Statter

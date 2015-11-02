@@ -38,7 +38,6 @@ type statsdStatter struct {
 	addr     *net.UDPAddr
 	Name     string
 	Hostname string
-	Logger   *Logger
 	Enabled  bool
 }
 

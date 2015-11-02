@@ -22,35 +22,15 @@
 package nibbleshell
 
 import (
+	"errors"
 	"fmt"
+
 	"image"
-	"os"
+	"image/jpeg"
+	"image/png"
+
+	"github.com/disintegration/imaging"
 )
 
-type ImageSourceType string
-type ImageSourceFactoryFunction func(*SourceConfig) ImageSource
-
-var (
-	imageSourceTypeToFactoryFunctionMap = make(map[ImageSourceType]ImageSourceFactoryFunction)
-)
-
-type ImageSource interface {
-	GetImage(*ImageSourceOptions) (image.Image, error)
-}
-
-type ImageSourceOptions struct {
-	Path string
-}
-
-func RegisterSource(sourceType ImageSourceType, factory ImageSourceFactoryFunction) {
-	imageSourceTypeToFactoryFunctionMap[sourceType] = factory
-}
-
-func NewImageSourceWithConfig(config *SourceConfig) ImageSource {
-	factory := imageSourceTypeToFactoryFunctionMap[config.Type]
-	if factory == nil {
-		fmt.Fprintf(os.Stderr, "Unknown image source type: %s\n", config.Type)
-		os.Exit(1)
-	}
-	return factory(config)
+type ImageProcessorOptions struct {
 }

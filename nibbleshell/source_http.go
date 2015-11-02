@@ -23,6 +23,7 @@ package nibbleshell
 
 import (
 	"fmt"
+	"image"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -35,7 +36,6 @@ const (
 
 type HttpImageSource struct {
 	Config *SourceConfig
-	Logger *Logger
 }
 
 func NewHttpImageSourceWithConfig(config *SourceConfig) ImageSource {
@@ -45,7 +45,7 @@ func NewHttpImageSourceWithConfig(config *SourceConfig) ImageSource {
 	}
 }
 
-func (s *HttpImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
+func (s *HttpImageSource) GetImage(request *ImageSourceOptions) (image.Image, error) {
 	httpRequest := s.getHttpRequest(request)
 	httpResponse, err := http.DefaultClient.Do(httpRequest)
 	defer httpResponse.Body.Close()

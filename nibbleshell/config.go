@@ -47,12 +47,11 @@ type ServerConfig struct {
 
 // RouteConfig holds the configuration settings for a particular route.
 type RouteConfig struct {
-	Name            string
-	CacheControl    string
-	Pattern         *regexp.Regexp
-	ImagePathIndex  int
-	SourceConfig    *SourceConfig
-	ProcessorConfig *ProcessorConfig
+	Name           string
+	CacheControl   string
+	Pattern        *regexp.Regexp
+	ImagePathIndex int
+	SourceConfig   *SourceConfig
 }
 
 // SourceConfig holds the type information and configuration settings for a
@@ -199,53 +198,6 @@ func (c *configParser) parseSourceConfig(sourceName string) *SourceConfig {
 		Directory:   c.stringForKeypath("sources.%s.directory", sourceName),
 		Host:        c.stringForKeypath("sources.%s.host", sourceName),
 	}
-}
-
-func (c *configParser) parseProcessorConfig(processorName string) *ProcessorConfig {
-	scaleModeName := c.stringForKeypath("processors.%s.default_scale_mode", processorName)
-	scaleMode, _ := ScaleModes[scaleModeName]
-	if scaleMode == 0 {
-		scaleMode = ScaleFill
-	}
-
-	maxDimensions := ImageDimensions{
-		Width:  uint(c.uintForKeypath("processors.%s.max_image_width", processorName)),
-		Height: uint(c.uintForKeypath("processors.%s.max_image_height", processorName)),
-	}
-
-	formats := make(map[string]FormatConfig)
-	processor := c.data["processors"].(map[string]interface{})[processorName].(map[string]interface{})
-	if _, ok := processor["formats"]; ok {
-		for formatName := range processor["formats"].(map[string]interface{}) {
-			format := FormatConfig{
-				Width:  c.uintForKeypath("processors.%s.formats.%s.width", processorName, formatName),
-				Height: c.uintForKeypath("processors.%s.formats.%s.height", processorName, formatName),
-				Blur:   c.floatForKeypath("processors.%s.formats.%s.blur", processorName, formatName),
-			}
-			formats[formatName] = format
-		}
-	}
-
-	config := &ProcessorConfig{
-		Name: processorName,
-		ImageCompressionQuality: c.uintForKeypath("processors.%s.image_compression_quality", processorName),
-		DefaultScaleMode:        scaleMode,
-		DefaultImageHeight:      c.uintForKeypath("processors.%s.default_image_height", processorName),
-		DefaultImageWidth:       c.uintForKeypath("processors.%s.default_image_width", processorName),
-		MaxImageDimensions:      maxDimensions,
-		MaxBlurRadiusPercentage: c.floatForKeypath("processors.%s.max_blur_radius_percentage", processorName),
-		AutoOrient:              c.boolForKeypath("processors.%s.auto_orient", processorName),
-		Formats:                 formats,
-
-		// DEPRECATED
-		MaintainAspectRatio: c.boolForKeypath("processors.%s.maintain_aspect_ratio", processorName),
-	}
-
-	if config.MaintainAspectRatio {
-		config.DefaultScaleMode = ScaleAspectFit
-	}
-
-	return config
 }
 
 func (c *configParser) valueForKeypath(valueType reflect.Kind, keypathFormat string, v ...interface{}) interface{} {

@@ -22,6 +22,7 @@
 package nibbleshell
 
 import (
+	"image"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,13 +34,11 @@ const (
 
 type FileSystemImageSource struct {
 	Config *SourceConfig
-	Logger *Logger
 }
 
 func NewFileSystemImageSourceWithConfig(config *SourceConfig) ImageSource {
 	source := &FileSystemImageSource{
 		Config: config,
-		Logger: NewLogger("source.fs.%s", config.Name),
 	}
 
 	baseDirectory, err := os.Open(source.Config.Directory)
@@ -61,7 +60,7 @@ func NewFileSystemImageSourceWithConfig(config *SourceConfig) ImageSource {
 	return source
 }
 
-func (s *FileSystemImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
+func (s *FileSystemImageSource) GetImage(request *ImageSourceOptions) (image.Image, error) {
 	fileName := s.fileNameForRequest(request)
 
 	file, err := os.Open(fileName)

@@ -23,6 +23,7 @@ package nibbleshell
 
 import (
 	"fmt"
+	"image"
 	"net"
 	"net/http"
 	"time"
@@ -166,7 +167,7 @@ func (hw *ResponseWriter) WriteError(message string, status int) {
 }
 
 // WriteImage writes an image to the output stream and sets the appropriate headers.
-func (hw *ResponseWriter) WriteImage(image *Image) {
+func (hw *ResponseWriter) WriteImage(image image.Image) {
 	bytes, size := image.GetBytes()
 	hw.SetHeader("Content-Type", image.GetMIMEType())
 	hw.SetHeader("Content-Length", fmt.Sprintf("%d", size))

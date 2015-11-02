@@ -23,6 +23,7 @@ package nibbleshell
 
 import (
 	"fmt"
+	"image"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -38,7 +39,6 @@ const (
 
 type S3ImageSource struct {
 	Config *SourceConfig
-	Logger *Logger
 }
 
 func NewS3ImageSourceWithConfig(config *SourceConfig) ImageSource {
@@ -48,7 +48,7 @@ func NewS3ImageSourceWithConfig(config *SourceConfig) ImageSource {
 	}
 }
 
-func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
+func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (image.Image, error) {
 	httpRequest := s.signedHTTPRequestForRequest(request)
 	httpResponse, err := http.DefaultClient.Do(httpRequest)
 	defer httpResponse.Body.Close()
