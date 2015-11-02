@@ -30,7 +30,7 @@ import (
 	"strings"
 )
 
-// Config is the primary configuration of Halfshell. It contains the server
+// Config is the primary configuration descriptor. It contains the server
 // configuration as well as a list of route configurations.
 type Config struct {
 	ServerConfig  *ServerConfig

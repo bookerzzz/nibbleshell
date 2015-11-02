@@ -35,7 +35,7 @@ type Nibbleshell struct {
 	Server *Server
 }
 
-// NewWithConfig creates a new Halfshell instance from an instance of Config.
+// NewWithConfig creates a new instance from an instance of Config.
 func NewWithConfig(config *Config) (*Nibbleshell, error) {
 	routes := make([]*Route, 0, len(config.RouteConfigs))
 	for _, routeConfig := range config.RouteConfigs {
@@ -54,8 +54,7 @@ func NewWithConfig(config *Config) (*Nibbleshell, error) {
 	}, nil
 }
 
-// Run starts the Halfshell program. Performs global (de)initialization, and
-// starts the HTTP server.
+// Run starts the HTTP server of the service.
 func (h *Nibbleshell) Run() error {
 	tmpl, err := template.New("start").Parse(StartupTemplateString)
 	if err != nil {

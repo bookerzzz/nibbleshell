@@ -27,10 +27,9 @@ import (
 	"strconv"
 )
 
-// A Route handles the business logic of a Halfshell request. It contains a
-// Processor and a Source. When a request is serviced, the appropriate route
-// is chosen after which the image is retrieved from the source and
-// processed by the processor.
+// A Route handles the internal logic of a Halfshell request. When a request is
+// serviced, the appropriate route is chosen after which the image is retrieved
+// from the source and processed by the processor.
 type Route struct {
 	Name           string
 	Pattern        *regexp.Regexp
