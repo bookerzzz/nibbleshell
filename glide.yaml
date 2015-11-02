@@ -1,0 +1,11 @@
+import:
+- package: github.com/oysterbooks/s3
+  version: 315a1a1706fb062688a380d62e94bcb127c20d6d
+- package: github.com/disintegration/imaging
+  version: 546cb3c5137b3f1232e123a26aa033aade6b3066
+- package: golang.org/x/image
+  version: baddd3465a05d84a6d8d3507547a91cb188c81ea
+  subpackages:
+  - bmp
+- package: github.com/Sirupsen/logrus
+  version: fe6f2b03125e4fcafb21406381010e363a072c80
