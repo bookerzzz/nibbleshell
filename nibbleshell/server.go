@@ -83,20 +83,15 @@ func (s *Server) ImageRequestHandler(w *ResponseWriter, r *Request) {
 		return
 	}
 
-	err = r.ProcessorOptions.ProcessImage(image)
+	// here image gets overriden with the processed version
+	image, err = r.ProcessorOptions.ProcessImage(image)
 	if err != nil {
 		log.WithError(err).Warning("Error processing image data")
 		w.WriteError("Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	log.Info("Returning resized image")
-
-	cacheControl := r.Route.CacheControl
-	if r.Route.CacheControl == "" {
-		cacheControl = "no-transform,public,max-age=86400,s-maxage=2592000"
-	}
-	w.SetHeader("Cache-Control", cacheControl)
+	w.SetHeader("Cache-Control", r.Route.CacheControl)
 	w.WriteImage(image)
 }
 

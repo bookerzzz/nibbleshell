@@ -60,23 +60,26 @@ func (i *Image) Bytes() []byte {
 	return i.buffer.Bytes()
 }
 
-func NewImageFromFile(f *os.File) (*Image, error) {
-	return nil, errors.New("not yet implemented")
+func NewImageFromFile(file *os.File) (*Image, error) {
+	return NewImageFromBuffer(file)
 }
 
 func NewImageFromBuffer(i io.ReadCloser) (*Image, error) {
-	return nil, errors.New("not yet implemented")
-}
-
-/*
-	var b bytes.Buffer
+	var format string
 	var err error
-	switch fmt {
-	case JPEG:
-		err = jpeg.Encode(&b, image, nil)
-	case PNG:
-		err = png.Encode(&b, image, nil)
-	default:
-		panic("attempt to use invalid output format")
+	img := &Image{}
+	img.image, format, err = image.Decode(i)
+	if err != nil {
+		return nil, err
 	}
-*/
+	switch format {
+	case "jpeg":
+		img.format = JPEG
+	case "png":
+		img.format = PNG
+	default:
+		return nil, errors.New("image format not supported")
+	}
+
+	return img, nil
+}

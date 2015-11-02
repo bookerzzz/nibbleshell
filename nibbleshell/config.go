@@ -138,6 +138,8 @@ func (c *configParser) parse() *Config {
 		routeConfig.SourceConfig = sourceConfigsByName[sourceKey]
 		if _, ok := routeData["cache_control"]; ok {
 			routeConfig.CacheControl = routeData["cache_control"].(string)
+		} else {
+			routeConfig.CacheControl = "no-transform,public,max-age=86400,s-maxage=2592000"
 		}
 
 		config.RouteConfigs = append(config.RouteConfigs, routeConfig)

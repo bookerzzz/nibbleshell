@@ -24,7 +24,6 @@ package nibbleshell
 import (
 	"errors"
 	"fmt"
-
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -40,6 +39,20 @@ func (ipo *ImageProcessorOptions) String() string {
 	return fmt.Sprintf("w=%dh=%dx=%xy=%dsx=%dsy=%d", ipo.Width, ipo.Height, ipo.X, ipo.Y, ipo.ScaleX, ipo.ScaleY)
 }
 
-func (ipo *ImageProcessorOptions) ProcessImage(img *Image) error {
-	return nil
+func (ipo *ImageProcessorOptions) ProcessImage(source *Image) (*Image, error) {
+	dest := &Image{format: source.format}
+
+	//TODO: perform operations here
+
+	var err error
+	switch dest.format {
+	case JPEG:
+		err = jpeg.Encode(&dest.buffer, source.image, nil)
+	case PNG:
+		err = png.Encode(&dest.buffer, source.image)
+	default:
+		return nil, errors.New("attempt to encode to unsupported image format")
+	}
+
+	return dest, err
 }
