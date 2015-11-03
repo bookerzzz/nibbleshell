@@ -69,6 +69,10 @@ func (s *FileSystemImageSource) GetImage(request *ImageSourceOptions) (*Image, e
 	if err != nil {
 		return nil, err
 	}
+	err = file.Close()
+	if err != nil {
+		return nil, err
+	}
 
 	return image, nil
 }

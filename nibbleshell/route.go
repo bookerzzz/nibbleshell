@@ -22,6 +22,7 @@
 package nibbleshell
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -75,7 +76,7 @@ func (p *Route) SourceAndProcessorOptionsForRequest(r *http.Request) (
 	matches := p.Pattern.FindAllStringSubmatch(r.URL.Path, -1)[0]
 	path := matches[p.ImagePathIndex]
 
-	var width, height, x, y, scale_x, scale_y uint64
+	var width, height, x, y uint64
 	var err error
 	width, err = strconv.ParseUint(r.FormValue("w"), 10, 32)
 	if err != nil {
@@ -95,13 +96,22 @@ func (p *Route) SourceAndProcessorOptionsForRequest(r *http.Request) (
 		return nil, nil, err
 	}
 
-	scale_x, err = strconv.ParseUint(r.FormValue("scale_x"), 10, 32)
+	var scale_x, scale_y int64
+	scale_x, err = strconv.ParseInt(r.FormValue("scale_x"), 10, 32)
 	if err != nil {
 		return nil, nil, err
 	}
-	scale_y, err = strconv.ParseUint(r.FormValue("scale_y"), 10, 32)
+	scale_y, err = strconv.ParseInt(r.FormValue("scale_y"), 10, 32)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if scale_x != 1 && scale_x != -1 {
+		return nil, nil, fmt.Errorf("only horizontal flip supported for X scaling")
+	}
+
+	if scale_y != 1 {
+		return nil, nil, fmt.Errorf("Y scaling not supported")
 	}
 
 	return &ImageSourceOptions{Path: path}, &ImageProcessorOptions{
@@ -109,7 +119,7 @@ func (p *Route) SourceAndProcessorOptionsForRequest(r *http.Request) (
 		Height: uint32(height),
 		X:      uint32(x),
 		Y:      uint32(y),
-		ScaleX: uint32(scale_x),
-		ScaleY: uint32(scale_y),
+		ScaleX: int32(scale_x),
+		ScaleY: int32(scale_y),
 	}, nil
 }

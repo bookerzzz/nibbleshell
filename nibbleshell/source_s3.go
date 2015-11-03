@@ -47,7 +47,10 @@ func NewS3ImageSourceWithConfig(config *SourceConfig) (ImageSource, error) {
 }
 
 func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
-	httpRequest := s.signedHTTPRequestForRequest(request)
+	httpRequest, err := s.signedHTTPRequestForRequest(request)
+	if err != nil {
+		return nil, err
+	}
 	httpResponse, err := http.DefaultClient.Do(httpRequest)
 	defer httpResponse.Body.Close()
 	if err != nil {
@@ -58,7 +61,7 @@ func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
 	}
 	image, err := NewImageFromBuffer(httpResponse.Body)
 	if err != nil {
-		// consume all body anyway, ignore errors
+		// attempt to consume all body anyway, ignore errors
 		_, _ = ioutil.ReadAll(httpResponse.Body)
 
 		// return image read error
@@ -67,7 +70,7 @@ func (s *S3ImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
 	return image, nil
 }
 
-func (s *S3ImageSource) signedHTTPRequestForRequest(request *ImageSourceOptions) *http.Request {
+func (s *S3ImageSource) signedHTTPRequestForRequest(request *ImageSourceOptions) (*http.Request, error) {
 	path := s.Config.Directory + request.Path
 	imageURLPathComponents := strings.Split(path, "/")
 
@@ -81,7 +84,10 @@ func (s *S3ImageSource) signedHTTPRequestForRequest(request *ImageSourceOptions)
 		Host:   fmt.Sprintf("%s.s3.amazonaws.com", s.Config.S3Bucket),
 	}
 
-	httpRequest, _ := http.NewRequest("GET", requestURL.RequestURI(), nil)
+	httpRequest, err := http.NewRequest("GET", requestURL.RequestURI(), nil)
+	if err != nil {
+		return nil, err
+	}
 	httpRequest.URL = requestURL
 	httpRequest.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
 	s3.Sign(httpRequest, s3.Keys{
@@ -89,7 +95,7 @@ func (s *S3ImageSource) signedHTTPRequestForRequest(request *ImageSourceOptions)
 		SecretKey: s.Config.S3SecretKey,
 	})
 
-	return httpRequest
+	return httpRequest, nil
 }
 
 func init() {

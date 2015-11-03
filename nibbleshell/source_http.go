@@ -44,7 +44,10 @@ func NewHttpImageSourceWithConfig(config *SourceConfig) (ImageSource, error) {
 }
 
 func (s *HttpImageSource) GetImage(request *ImageSourceOptions) (*Image, error) {
-	httpRequest := s.getHttpRequest(request)
+	httpRequest, err := s.getHttpRequest(request)
+	if err != nil {
+		return nil, err
+	}
 	httpResponse, err := http.DefaultClient.Do(httpRequest)
 	defer httpResponse.Body.Close()
 	if err != nil {
@@ -61,10 +64,11 @@ func (s *HttpImageSource) GetImage(request *ImageSourceOptions) (*Image, error) 
 		// return image read error
 		return nil, err
 	}
+
 	return image, nil
 }
 
-func (s *HttpImageSource) getHttpRequest(request *ImageSourceOptions) *http.Request {
+func (s *HttpImageSource) getHttpRequest(request *ImageSourceOptions) (*http.Request, error) {
 	path := s.Config.Directory + request.Path
 	imageURLPathComponents := strings.Split(path, "/")
 
@@ -78,10 +82,13 @@ func (s *HttpImageSource) getHttpRequest(request *ImageSourceOptions) *http.Requ
 		Host:   s.Config.Host,
 	}
 
-	httpRequest, _ := http.NewRequest("GET", requestURL.RequestURI(), nil)
+	httpRequest, err := http.NewRequest("GET", requestURL.RequestURI(), nil)
+	if err != nil {
+		return nil, err
+	}
 	httpRequest.URL = requestURL
 
-	return httpRequest
+	return httpRequest, nil
 }
 
 func init() {

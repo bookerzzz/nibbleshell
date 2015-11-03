@@ -60,6 +60,14 @@ func (i *Image) Bytes() []byte {
 	return i.buffer.Bytes()
 }
 
+func (i *Image) Width() uint32 {
+	return uint32(i.image.Bounds().Max.X - i.image.Bounds().Min.X)
+}
+
+func (i *Image) Height() uint32 {
+	return uint32(i.image.Bounds().Max.Y - i.image.Bounds().Min.Y)
+}
+
 func NewImageFromFile(file *os.File) (*Image, error) {
 	return NewImageFromBuffer(file)
 }

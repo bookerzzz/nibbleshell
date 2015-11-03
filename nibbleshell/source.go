@@ -23,7 +23,6 @@ package nibbleshell
 
 import (
 	"fmt"
-	"os"
 )
 
 type ImageSourceType string
@@ -48,8 +47,8 @@ func RegisterSource(sourceType ImageSourceType, factory ImageSourceFactoryFuncti
 func NewImageSourceWithConfig(config *SourceConfig) (ImageSource, error) {
 	factory := imageSourceTypeToFactoryFunctionMap[config.Type]
 	if factory == nil {
-		fmt.Fprintf(os.Stderr, "Unknown image source type: %s\n", config.Type)
-		os.Exit(1)
+		return nil, fmt.Errorf("Unknown image source type: %s\n", config.Type)
 	}
+
 	return factory(config)
 }

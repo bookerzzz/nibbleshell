@@ -32,7 +32,8 @@ import (
 )
 
 type ImageProcessorOptions struct {
-	Width, Height, X, Y, ScaleX, ScaleY uint32
+	Width, Height, X, Y uint32
+	ScaleX, ScaleY      int32
 }
 
 func (ipo *ImageProcessorOptions) String() string {
@@ -42,14 +43,25 @@ func (ipo *ImageProcessorOptions) String() string {
 func (ipo *ImageProcessorOptions) ProcessImage(source *Image) (*Image, error) {
 	dest := &Image{format: source.format}
 
-	//TODO: perform operations here
+	var wip image.Image
+
+	if ipo.ScaleX == -1 {
+		wip = imaging.FlipH(source.image)
+	} else {
+		wip = source.image
+	}
+
+	if ipo.X != 0 || ipo.Y != 0 || ipo.Width != source.Width() || ipo.Height != source.Height() {
+		r := image.Rectangle{image.Point{int(ipo.X), int(ipo.Y)}, image.Point{int(ipo.X + ipo.Width), int(ipo.Y + ipo.Height)}}
+		wip = imaging.Crop(wip, r)
+	}
 
 	var err error
 	switch dest.format {
 	case JPEG:
-		err = jpeg.Encode(&dest.buffer, source.image, nil)
+		err = jpeg.Encode(&dest.buffer, wip, nil)
 	case PNG:
-		err = png.Encode(&dest.buffer, source.image)
+		err = png.Encode(&dest.buffer, wip)
 	default:
 		return nil, errors.New("attempt to encode to unsupported image format")
 	}
