@@ -34,6 +34,7 @@ import (
 type ImageProcessorOptions struct {
 	Width, Height, X, Y uint32
 	ScaleX, ScaleY      int32
+	Quality             uint8
 }
 
 func (ipo *ImageProcessorOptions) String() string {
@@ -59,7 +60,7 @@ func (ipo *ImageProcessorOptions) ProcessImage(source *Image) (*Image, error) {
 	var err error
 	switch dest.format {
 	case JPEG:
-		err = jpeg.Encode(&dest.buffer, wip, nil)
+		err = jpeg.Encode(&dest.buffer, wip, &jpeg.Options{int(ipo.Quality)})
 	case PNG:
 		err = png.Encode(&dest.buffer, wip)
 	default:

@@ -22,6 +22,7 @@
 package nibbleshell
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -76,7 +77,7 @@ func (p *Route) SourceAndProcessorOptionsForRequest(r *http.Request) (
 	matches := p.Pattern.FindAllStringSubmatch(r.URL.Path, -1)[0]
 	path := matches[p.ImagePathIndex]
 
-	var width, height, x, y uint64
+	var width, height, x, y, quality uint64
 	var err error
 	width, err = strconv.ParseUint(r.FormValue("w"), 10, 32)
 	if err != nil {
@@ -85,6 +86,13 @@ func (p *Route) SourceAndProcessorOptionsForRequest(r *http.Request) (
 	height, err = strconv.ParseUint(r.FormValue("h"), 10, 32)
 	if err != nil {
 		return nil, nil, err
+	}
+	quality, err = strconv.ParseUint(r.FormValue("quality"), 10, 32)
+	if err != nil {
+		return nil, nil, err
+	}
+	if quality == 0 || quality > 100 {
+		return nil, nil, errors.New("invalid quality value")
 	}
 
 	x, err = strconv.ParseUint(r.FormValue("x"), 10, 32)
@@ -115,11 +123,12 @@ func (p *Route) SourceAndProcessorOptionsForRequest(r *http.Request) (
 	}
 
 	return &ImageSourceOptions{Path: path}, &ImageProcessorOptions{
-		Width:  uint32(width),
-		Height: uint32(height),
-		X:      uint32(x),
-		Y:      uint32(y),
-		ScaleX: int32(scale_x),
-		ScaleY: int32(scale_y),
+		Width:   uint32(width),
+		Height:  uint32(height),
+		X:       uint32(x),
+		Y:       uint32(y),
+		ScaleX:  int32(scale_x),
+		ScaleY:  int32(scale_y),
+		Quality: uint8(quality),
 	}, nil
 }
