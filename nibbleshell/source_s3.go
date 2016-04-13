@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/oysterbooks/s3"
+	"github.com/bookerzzz/s3"
 )
 
 const (

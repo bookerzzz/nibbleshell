@@ -1,20 +1,22 @@
+## Nibbleshell build targets
+## See also README.md
+
+## list of buildable Go packages
+PKGS := $(shell glide nv)
+
 OK_COLOR=\033[32;01m
 NO_COLOR=\033[0m
 
 build:
 	@echo "$(OK_COLOR)==> Compiling binary$(NO_COLOR)"
-	mkdir -p bin
-	GOBIN=bin/ go install
+	mkdir -p dist/bin
+	GOBIN="$(CURDIR)/dist/bin" go install $(PKGS)
 
 clean:
-	@rm -rf bin/
-	@rm -rf result/
+	@rm -rf dist/bin/
 
-deps:
+vendor:
 	@echo "$(OK_COLOR)==> Installing dependencies$(NO_COLOR)"
-	glide up
+	glide up --no-recursive
 
-format:
-	go fmt ./...
-
-.PHONY: clean format deps build
+.PHONY: clean vendor build
