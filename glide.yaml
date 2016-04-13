@@ -1,5 +1,5 @@
 import:
-- package: github.com/oysterbooks/s3
+- package: github.com/bookerzzz/s3
   version: 315a1a1706fb062688a380d62e94bcb127c20d6d
 - package: github.com/disintegration/imaging
   version: 546cb3c5137b3f1232e123a26aa033aade6b3066
